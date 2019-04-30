@@ -1,5 +1,243 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd"></mule>
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<flow name="transformationFlow" doc:id="f3809f09-42f7-4bc7-a8d0-b410715312df" >
+		<logger level="INFO" doc:name="Logger" doc:id="d4e64743-f7ed-4ee0-b462-c194a8f57dfb" message="Called Tranformation flow" />
+		<logger level="INFO" doc:name="Logger" doc:id="0b8dec45-33b9-4030-8dd7-e3cb89f206ad" message="Input #[payload]" />
+		<ee:transform doc:name="Transform Message" doc:id="2612ed25-a39c-4fa7-af3a-1cf0758dd3df" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://www.demandware.com/xml/impex/order/2006-10-31
+---
+{
+	CapturedDate: payload.ns0#orders.*ns0#order.ns0#"order-date" as String default "",
+	CreatedBy:payload.ns0#"created-by" default "",
+	CreatedTimestamp: payload.ns0#"order-date" as String default "",
+	CurrencyCode: payload.ns0#orders.*ns0#order.ns0#currency default "",
+	CustomerAddress: {
+		Address1: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#address1 default "",
+		Address2: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#address2 default "",
+		City: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#city default "",
+		Country: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"country-code" default "",
+		FirstName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"first-name" default "",
+		LastName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"last-name" default "",
+		Phone: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#phone default "",
+		PostalCode: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"postal-code" default "",
+		State: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"state-code" default ""
+	},
+	CustomerEmail: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"customer-email" default "",
+	CustomerFirstName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"first-name" default "",
+	CustomerLastName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"last-name" default "",
+	CustomerPhone: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#phone default "",
+	DocType: {
+		DocTypeId: "CustomerOrder"
+	},
+	Invoice: [{
+		InvoiceChargeDetail: payload.ns0#orders.*ns0#order.ns0#"shipping-lineitems".*ns0#"shipping-lineitem" map ( shippinglineitem , indexOfShippinglineitem ) -> {
+			ChargeDisplayName: shippinglineitem.ns0#"lineitem-text" default ""
+		},
+		InvoiceLine: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem" map ( productlineitem , indexOfProductlineitem ) -> {
+		}
+	}],
+	IsConfirmed: "true",
+	OrderLine: [{
+		Allocation: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem" map ( productlineitem , indexOfProductlineitem ) -> {
+			ItemId: productlineitem.ns0#"product-id" default "",
+			Quantity: productlineitem.ns0#quantity as Number default 0
+		},
+		CreatedTimestamp: now(),
+		DeliveryMethod: {
+			DeliveryMethodId: payload.ns0#orders.*ns0#order.ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default ""
+		},
+		IsCancelled: payload.ns0#orders.*ns0#order.ns0#status.ns0#"order-status" as Boolean default true,
+		IsGiftCard: false,
+		IsOnHold: payload.ns0#orders.*ns0#order.ns0#payments.*ns0#payment.ns0#"custom-attributes".*ns0#"custom-attribute"[0],
+		ItemDescription: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"lineitem-text" default "",
+		ItemSize: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		ItemStyle: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		ItemTaxCode: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		OrderId: payload.ns0#orders.*ns0#order.ns0#"original-order-no" default "",
+		OrderLineChargeDetail: [{
+			ChargeDisplayName: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"lineitem-text" default "",
+			ChargeTotal: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"net-price" default 0,
+			ChargeType: {
+				ChargeTypeId: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"promotion-id" default ""
+			},
+			IsInformational: false
+		}],
+		OrderLineId: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#position as String default "",
+		OrderLineSubTotal: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"net-price" default 0,
+		OrderLineTaxDetail: [{
+			TaxRate: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"tax-rate" default 0,
+			TaxTypeId: "SALES"
+		}],
+		QuantityDetail: [{
+			UOM: "Eaches"
+		}],
+		ShippingMethodId: payload.ns0#orders.*ns0#order.ns0#shipments.*ns0#shipment.ns0#"shipping-method" default "",
+		TotalTaxes: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#tax default 0,
+		UnitPrice: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"base-price" default 0
+	}],
+	OrderSubTotal: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"merchandize-total".ns0#"net-price" default 0,
+	OrderTaxDetail: [{
+		TaxableAmount: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"tax-basis" default 0
+	}],
+	OrderTotal: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"order-total".ns0#"gross-price" default 0,
+	OrderType: {
+		OrderTypeId: "Web"
+	},
+	Payment: [{
+		PaymentMethod: payload.ns0#orders.*ns0#order.ns0#payments.*ns0#payment map ( payment , indexOfPayment ) -> {
+			AccountDisplayNumber: payment.ns0#"credit-card".ns0#"card-number" default "",
+			AccountNumber: (payment.ns0#"credit-card".ns0#"card-token" default "") ++ (payment.ns0#"gift-certificate".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default ""),
+			CardExpiryMonth: payment.ns0#"credit-card".ns0#"expiration-month" as String default "",
+			CardExpiryYear: payment.ns0#"credit-card".ns0#"expiration-year" as String default "",
+			CardType: {
+				CardTypeId: (payment.ns0#"credit-card".ns0#"card-type" default "") ++ (payment.ns0#"credit-card".ns0#"card-type" default "")
+			},
+			NameOnCard: payment.ns0#"credit-card".ns0#"card-holder" default "",
+			PaymentTransaction: ([{
+				ProcessedAmount: payment.ns0#amount default 0
+			}]) ++ (payment.ns0#"credit-card".ns0#"custom-attributes".*ns0#"custom-attribute" map( customattribute , indexOfCustomattribute ) -> {
+				RequestId: customattribute.@"attribute-id" default ""
+			}),
+			PaymentType: {
+				PaymentTypeId: payment.ns0#"custom-method".ns0#"method-name" default ""
+			}
+		}
+	}],
+	PaymentStatus: "Authorized",
+	TotalTaxes: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"order-total".ns0#tax default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="d9818276-121a-4858-9ddb-6c38cf5f7918">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://www.demandware.com/xml/impex/order/2006-10-31
+---
+{
+	CapturedDate: payload.ns0#orders.*ns0#order.ns0#"order-date" as String default "",
+	ContactPreference: payload.ns0#orders.*ns0#order map ( order , indexOfOrder ) -> {
+		CreatedBy: order.ns0#"created-by" default "",
+		CreatedTimestamp: order.ns0#"order-date" as String default ""
+	},
+	CurrencyCode: payload.ns0#orders.*ns0#order.ns0#currency default "",
+	CustomerAddress: {
+		Address1: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#address1 default "",
+		Address2: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#address2 default "",
+		City: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#city default "",
+		Country: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"country-code" default "",
+		FirstName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"first-name" default "",
+		LastName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"last-name" default "",
+		Phone: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#phone default "",
+		PostalCode: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"postal-code" default "",
+		State: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"state-code" default ""
+	},
+	CustomerEmail: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"customer-email" default "",
+	CustomerFirstName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"first-name" default "",
+	CustomerLastName: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#"last-name" default "",
+	CustomerPhone: payload.ns0#orders.*ns0#order.ns0#customer.ns0#"billing-address".ns0#phone default "",
+	DocType: {
+		DocTypeId: "CustomerOrder"
+	},
+	Invoice: [{
+		InvoiceChargeDetail: payload.ns0#orders.*ns0#order.ns0#"shipping-lineitems".*ns0#"shipping-lineitem" map ( shippinglineitem , indexOfShippinglineitem ) -> {
+			ChargeDisplayName: shippinglineitem.ns0#"lineitem-text" default ""
+		},
+		InvoiceLine: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem" map ( productlineitem , indexOfProductlineitem ) -> {
+		}
+	}],
+	IsConfirmed: "true",
+	OrderLine: [{
+		Allocation: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem" map ( productlineitem , indexOfProductlineitem ) -> {
+			ItemId: productlineitem.ns0#"product-id" default "",
+			Quantity: productlineitem.ns0#quantity as Number default 0
+		},
+		CreatedTimestamp: now(),
+		DeliveryMethod: {
+			DeliveryMethodId: payload.ns0#orders.*ns0#order.ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default ""
+		},
+		IsCancelled: payload.ns0#orders.*ns0#order.ns0#status.ns0#"order-status" as Boolean default true,
+		IsGiftCard: false,
+		IsOnHold: payload.ns0#orders.*ns0#order.ns0#payments.*ns0#payment.ns0#"custom-attributes".*ns0#"custom-attribute"[0],
+		ItemDescription: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"lineitem-text" default "",
+		ItemSize: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		ItemStyle: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		ItemTaxCode: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default "",
+		OrderId: payload.ns0#orders.*ns0#order.ns0#"original-order-no" default "",
+		OrderLineChargeDetail: [{
+			ChargeDisplayName: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"lineitem-text" default "",
+			ChargeTotal: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"net-price" default 0,
+			ChargeType: {
+				ChargeTypeId: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"price-adjustments".*ns0#"price-adjustment".ns0#"promotion-id" default ""
+			},
+			IsInformational: false
+		}],
+		OrderLineId: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#position as String default "",
+		OrderLineSubTotal: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"net-price" default 0,
+		OrderLineTaxDetail: [{
+			TaxRate: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"tax-rate" default 0,
+			TaxTypeId: "SALES"
+		}],
+		QuantityDetail: [{
+			UOM: "Eaches"
+		}],
+		ShippingMethodId: payload.ns0#orders.*ns0#order.ns0#shipments.*ns0#shipment.ns0#"shipping-method" default "",
+		TotalTaxes: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#tax default 0,
+		UnitPrice: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"base-price" default 0
+	}],
+	OrderSubTotal: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"merchandize-total".ns0#"net-price" default 0,
+	OrderTaxDetail: [{
+		TaxableAmount: payload.ns0#orders.*ns0#order.ns0#"product-lineitems".*ns0#"product-lineitem".ns0#"tax-basis" default 0
+	}],
+	OrderTotal: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"order-total".ns0#"gross-price" default 0,
+	OrderType: {
+		OrderTypeId: "Web"
+	},
+	Payment: [{
+		PaymentMethod: payload.ns0#orders.*ns0#order.ns0#payments.*ns0#payment map ( payment , indexOfPayment ) -> {
+			AccountDisplayNumber: payment.ns0#"credit-card".ns0#"card-number" default "",
+			AccountNumber: (payment.ns0#"credit-card".ns0#"card-token" default "") ++ (payment.ns0#"gift-certificate".ns0#"custom-attributes".*ns0#"custom-attribute".@"attribute-id" default ""),
+			CardExpiryMonth: payment.ns0#"credit-card".ns0#"expiration-month" as String default "",
+			CardExpiryYear: payment.ns0#"credit-card".ns0#"expiration-year" as String default "",
+			CardType: {
+				CardTypeId: (payment.ns0#"credit-card".ns0#"card-type" default "") ++ (payment.ns0#"credit-card".ns0#"card-type" default "")
+			},
+			NameOnCard: payment.ns0#"credit-card".ns0#"card-holder" default "",
+			PaymentTransaction: ([{
+				ProcessedAmount: payment.ns0#amount default 0
+			}]) ++ (payment.ns0#"credit-card".ns0#"custom-attributes".*ns0#"custom-attribute" map( customattribute , indexOfCustomattribute ) -> {
+				RequestId: customattribute.@"attribute-id" default ""
+			}),
+			PaymentType: {
+				PaymentTypeId: payment.ns0#"custom-method".ns0#"method-name" default ""
+			}
+		}
+	}],
+	PaymentStatus: "Authorized",
+	TotalTaxes: payload.ns0#orders.*ns0#order.ns0#totals.ns0#"order-total".ns0#tax default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="1b195e1d-8371-488c-b851-f051990a8654" config-ref="HTTP_Request_configuration" path="/api/v1/synch-dw-detail" outputMimeType="application/xml" responseTimeout="60000"/>
+		<ee:transform doc:name="Transform Message" doc:id="6d8c16b8-496c-4695-b2aa-302c91ece60a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Message posted successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
